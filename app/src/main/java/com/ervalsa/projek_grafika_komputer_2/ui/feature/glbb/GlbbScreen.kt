@@ -11,24 +11,53 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.core.widget.ContentLoadingProgressBar
+import kotlinx.coroutines.delay
+import java.util.*
+import kotlin.concurrent.thread
 
 @Composable
 fun GlbbScreen() {
 
-    var velocityTextState by remember { mutableStateOf(0f.toString()) }
+    // State
+    var velocityTextState by remember { mutableStateOf(500f.toString()) }
     val glbbState by remember { mutableStateOf(GlbbState()) }
-    var horizontalSlider = glbbState.pos.x
-    var verticalSlider = glbbState.pos.y
+    val horizontalSlider = glbbState.pos.x
+    val verticalSlider = glbbState.pos.y
 
-    fun move() {
+    var velocityFloat by remember { mutableStateOf(500f) }
+    velocityTextState.toFloatOrNull()?.let {
+        velocityFloat = it
+    }
 
+    var velocity = 500f
+    val thread = Thread()
+    val timer = Timer()
+    var posX = glbbState.pos.x
+    val posY = glbbState.pos.y
+    val size = glbbState.size
+    var gravity = 1
+
+    fun moveRight() {
+        var currPos = glbbState.pos.x + velocityFloat / 10
+        if (glbbState.pos.x < currPos) {
+            glbbState.pos = Offset(posX - currPos, posY)
+            glbbState.pos.x - currPos
+            velocityFloat += gravity
+            velocityFloat *= -1
+        } else {
+            glbbState.pos = Offset(currPos, posY)
+            velocityFloat -= gravity
+        }
+        var delay: Long = 10L + System.currentTimeMillis()
+        while (System.currentTimeMillis() < delay) {
+
+        }
     }
 
     Surface() {
-
-
         // Canvas
         Column() {
             Box(
@@ -52,13 +81,11 @@ fun GlbbScreen() {
                                         // Consuming event prevents other gestures or scroll to intercept
                                         event.changes.forEach { change ->
                                             change.consumePositionChange()
-
                                             glbbState.setPosClamped(glbbState.posFromScreen(change.position));
-
                                         }
-                                    } while (event.changes.any { it.pressed })
-
-
+                                    } while (
+                                        event.changes.any { it.pressed }
+                                    )
                                 }
                             }
                         },
@@ -80,7 +107,10 @@ fun GlbbScreen() {
                 Column() {
                     Button(
                         onClick = {
-
+                            if (glbbState.pos.x < 0 || glbbState.pos.x < size.width) {
+                                glbbState.pos = Offset(posX - 20f, posY)
+                                glbbState.clamp()
+                            }
                         },
                     ) {
                         Text(text = "<")
@@ -96,10 +126,38 @@ fun GlbbScreen() {
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 TextField(
-                    modifier = Modifier.width(220.dp),
+                    modifier = Modifier.width(100.dp),
                     value = velocityTextState,
+                    singleLine = true,
                     onValueChange = { velocityTextState = it }
                 )
+                Spacer(modifier = Modifier.width(10.dp))
+                Column() {
+                    Button(
+                        onClick = {
+                            if (glbbState.pos.x < 0 || glbbState.pos.x < size.width) {
+                                glbbState.pos = Offset(posX + 20f, posY)
+                                glbbState.clamp()
+                            }
+                        },
+                    ) {
+                        Text(text = ">")
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Button(
+                        onClick = {
+                            if (velocity != 0f) {
+                                posX += velocity
+                                if  (posX < 0 || posX > size.width) {
+                                    velocity = - velocity
+                                    glbbState.clamp()
+                                }
+                            }
+                        },
+                    ) {
+                        Text(text = ">>")
+                    }
+                }
                 Spacer(modifier = Modifier.width(10.dp))
                 Column() {
                     Button(
@@ -107,16 +165,22 @@ fun GlbbScreen() {
 
                         },
                     ) {
-                        Text(text = ">")
+                        Text(text = "W")
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
-                        onClick = { /*TODO*/ },
-
-                        ) {
-                        Text(text = ">>")
+                        onClick = {
+                            if  (glbbState.pos.y < 0 || glbbState.pos.y < size.height) {
+                                glbbState.pos = Offset(posX , posY - 20f)
+                                glbbState.clamp()
+                                println(glbbState.pos.y)
+                            }
+                        },
+                    ) {
+                        Text(text = "V")
                     }
                 }
+
             }
             Spacer(modifier = Modifier.height(10.dp))
             Column(

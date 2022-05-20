@@ -9,6 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import kotlin.math.cos
+import kotlin.math.sin
 
 class GlbbState {
     var pos by mutableStateOf(Offset(0f, 0f))
@@ -33,7 +36,7 @@ class GlbbState {
         val max = posMax();
         val x = pos.x.coerceAtMost(max.x).coerceAtLeast(0f);
         val y = pos.y.coerceAtMost(max.y).coerceAtLeast(0f);
-        pos = Offset(x,y);
+        pos = Offset(x, y);
     }
 
     fun posFromScreen(pos: Offset): Offset {
@@ -61,6 +64,26 @@ fun GlbbCanvas(
             center = pos
         )
 
+        val wheel = 4;
+        val wheelF = wheel.toFloat();
+        val points = (0..wheel)
+            .map { it * 360.0 / wheelF }
+            .map { it + pos.x + pos.y }
+            .map { Math.toRadians(it) }
+            .map {
+                Offset(
+                    (pos.x + (radius * cos(it)).toFloat()),
+                    (pos.y + (radius * sin(it)).toFloat())
+                )
+            };
 
+        for (it in points) {
+            drawLine(
+                color = Color.Yellow,
+                start = pos,
+                end = it,
+                strokeWidth = Stroke.DefaultMiter
+            );
+        }
     }
 }
