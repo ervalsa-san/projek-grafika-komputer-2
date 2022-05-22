@@ -14,7 +14,6 @@ class GlbbState {
     fun posToScreen(size: Size): Offset {
         val x = pos.x + radius;
         val y = size.height - radius - pos.y;
-
         return Offset(x, y)
     }
 
