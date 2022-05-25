@@ -17,19 +17,15 @@ fun GlbbCanvas(
 ) {
     Canvas(modifier = modifier) {
         state.size = size;
+        state.clamp()
         val pos = state.posToScreen(size)
-        val ballRadius = state.radius
+        val radius = state.scaledRadius
 
-        fun radius() : Float{
-            val ballScale = Math.max(pos.y, 0f) / Math.max(size.height, 1f)
-            val minScale = 0.5f * (1f - ballScale)
-            val scaled = 1.0f - Math.min(minScale, 0.9f)
-            return ballRadius * scaled
-        }
+        state.move()
 
         drawCircle(
             color = Color.Red,
-            radius = radius(),
+            radius = radius,
             center = pos
         )
 
@@ -41,8 +37,8 @@ fun GlbbCanvas(
             .map { Math.toRadians(it) }
             .map {
                 Offset(
-                    (pos.x + (radius() * cos(it)).toFloat()),
-                    (pos.y + (radius() * sin(it)).toFloat())
+                    (pos.x + (radius * cos(it)).toFloat()),
+                    (pos.y + (radius * sin(it)).toFloat())
                 )
             };
 

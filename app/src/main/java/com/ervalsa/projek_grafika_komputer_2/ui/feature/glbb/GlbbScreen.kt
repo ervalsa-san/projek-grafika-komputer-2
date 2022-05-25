@@ -1,7 +1,8 @@
 package com.ervalsa.projek_grafika_komputer_2.ui.feature.glbb
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.*
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -11,52 +12,34 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import java.util.*
 
 @Composable
 fun GlbbScreen() {
 
-
     // State
-    var velocityTextState by remember { mutableStateOf(500f.toString()) }
     val glbbState by remember { mutableStateOf(GlbbState()) }
-    val horizontalSlider = glbbState.pos.x
-    val verticalSlider = glbbState.pos.y
+    val horizontalState by remember { mutableStateOf(GlbbState.HorizontalState()) }
+    var velocityTextState by remember { mutableStateOf(glbbState.velocity.toString()) }
+    var posSlider by remember(glbbState) { mutableStateOf(glbbState.pos) }
+    var isPlaying by remember(glbbState) { mutableStateOf(false) }
+    val horizontalSlider = posSlider.x
+    val verticalSlider = posSlider.y
 
-    var velocity = 100f
-    var ballPosX = glbbState.pos.x
+    if (isPlaying.not()) {
+        glbbState.pos = posSlider
+        velocityTextState.toFloatOrNull()?.let {
+            glbbState.velocity = it
+        }
+    } else {
+        posSlider = glbbState.pos
+        velocityTextState = glbbState.velocity.toString()
+    }
+
+    isPlaying = glbbState.isPlaying
+
+    val ballPosX = glbbState.pos.x
     val ballPosY = glbbState.pos.y
     val size = glbbState.size
-    val gravity = 1
-
-    var velocityFloat by remember { mutableStateOf(velocity) }
-    velocityTextState.toFloatOrNull()?.let {
-        velocityFloat = it
-    }
-
-    fun stepLeft() {
-        if (glbbState.pos.x < 0 || glbbState.pos.x < size.width) {
-            glbbState.pos = Offset(ballPosX - 20f, ballPosY)
-            glbbState.clamp()
-        }
-    }
-
-    fun stepRight() {
-        if (glbbState.pos.x < 0 || glbbState.pos.x < size.width) {
-            glbbState.pos = Offset(ballPosX + 20f, ballPosY)
-            glbbState.clamp()
-        }
-    }
-
-    fun moveRight() {
-        if (velocity != 0f) {
-            ballPosX += velocity
-            if  (ballPosX < 0 || ballPosX > size.width) {
-                velocity = -velocity
-                glbbState.clamp()
-            }
-        }
-    }
 
     Surface() {
         // Canvas
@@ -72,7 +55,7 @@ fun GlbbScreen() {
                         .pointerInput(glbbState) {
                             forEachGesture {
                                 awaitPointerEventScope {
-                                    awaitFirstDown();
+                                    awaitFirstDown()
                                     do {
                                         //This PointerEvent contains details including
                                         // event, id, position and more
@@ -82,7 +65,7 @@ fun GlbbScreen() {
                                         // Consuming event prevents other gestures or scroll to intercept
                                         event.changes.forEach { change ->
                                             change.consumePositionChange()
-                                            glbbState.setPosClamped(glbbState.posFromScreen(change.position));
+                                            posSlider = glbbState.posFromScreen(change.position)
                                         }
                                     } while (
                                         event.changes.any { it.pressed }
@@ -108,7 +91,11 @@ fun GlbbScreen() {
                 Column() {
                     Button(
                         onClick = {
-                            stepLeft()
+                            if (ballPosX < 0 || glbbState.velocity > 0) {
+                                posSlider = Offset(posSlider.x - 5f, posSlider.y)
+                                glbbState.velocity -= 1
+                                velocityTextState = glbbState.velocity.toString()
+                            }
                         },
                     ) {
                         Text(text = "<")
@@ -116,7 +103,7 @@ fun GlbbScreen() {
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
-
+                            glbbState.playHorizontal(-1)
                         },
                     ) {
                         Text(text = "<<")
@@ -133,7 +120,11 @@ fun GlbbScreen() {
                 Column() {
                     Button(
                         onClick = {
-                            stepRight()
+                            if (ballPosX < 0 || glbbState.velocity > 0) {
+                                posSlider = Offset(posSlider.x + 5f, posSlider.y)
+                                glbbState.velocity -= 1
+                                velocityTextState = glbbState.velocity.toString()
+                            }
                         },
                     ) {
                         Text(text = ">")
@@ -141,8 +132,7 @@ fun GlbbScreen() {
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
-                            moveRight()
-                            print(moveRight())
+                            glbbState.playHorizontal(1)
                         },
                     ) {
                         Text(text = ">>")
@@ -152,7 +142,7 @@ fun GlbbScreen() {
                 Column() {
                     Button(
                         onClick = {
-
+                            glbbState.playVertical()
                         },
                     ) {
                         Text(text = "W")
@@ -160,10 +150,8 @@ fun GlbbScreen() {
                     Spacer(modifier = Modifier.height(10.dp))
                     Button(
                         onClick = {
-                            if  (glbbState.pos.y < 0 || glbbState.pos.y < size.height) {
-                                glbbState.pos = Offset(ballPosX , ballPosY - 20f)
-                                glbbState.clamp()
-                                println(glbbState.pos.y)
+                            if (ballPosY < 0 || glbbState.velocity > 0) {
+                                posSlider = Offset(posSlider.x, posSlider.y - 5f)
                             }
                         },
                     ) {
@@ -180,8 +168,8 @@ fun GlbbScreen() {
                 Text(text = "Vertical Slider")
                 Slider(
                     value = verticalSlider,
-                    valueRange = 0f..(glbbState.posMax().y.coerceAtLeast(0f)),
-                    onValueChange = { glbbState.pos = Offset(glbbState.pos.x, it) }
+                    valueRange = 0f..(glbbState.size.height.coerceAtLeast(0f)),
+                    onValueChange = { posSlider = Offset(posSlider.x, it) }
                 )
             }
             Column(
@@ -192,7 +180,7 @@ fun GlbbScreen() {
                 Slider(
                     value = horizontalSlider,
                     valueRange = 0f..(glbbState.posMax().x.coerceAtLeast(0f)),
-                    onValueChange = { glbbState.pos = Offset(it, glbbState.pos.y) }
+                    onValueChange = { posSlider = Offset(it, posSlider.y) }
                 )
             }
         }
