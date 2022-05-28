@@ -19,20 +19,6 @@ fun Instant.Companion.now() {
     (Clock.System.now() - Clock.System.now())
 }
 
-class Duration {
-
-    companion object {
-        private val now = (Clock.System.now())
-
-        @OptIn(ExperimentalTime::class)
-        val ZERO = now - now
-
-        fun fromSecsDouble(secs: Double) {
-//            .plus(secs.times(1000 * 1000 * 1000), DateTimeUnit.NANOSECOND)
-        }
-    }
-}
-
 class GlbbState {
     var pos by mutableStateOf(Offset(0f, 0f))
     var radius by mutableStateOf(100f)
@@ -74,11 +60,6 @@ class GlbbState {
         val x = pos.x.coerceAtMost(max.x).coerceAtLeast(0f);
         val y = pos.y.coerceAtMost(max.y).coerceAtLeast(0f);
         pos = Offset(x, y);
-    }
-
-    fun setPosClamped(pos: Offset) {
-        this.pos = pos
-        clamp()
     }
 
     val isPlaying: Boolean
@@ -164,10 +145,6 @@ class GlbbState {
             direction = -1;
             start = Clock.System.now()
             accel = 10f
-        }
-
-        fun stop() {
-            direction = 0
         }
 
         val isPlaying

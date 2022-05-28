@@ -18,7 +18,6 @@ fun GlbbScreen() {
 
     // State
     val glbbState by remember { mutableStateOf(GlbbState()) }
-    val horizontalState by remember { mutableStateOf(GlbbState.HorizontalState()) }
     var velocityTextState by remember { mutableStateOf(glbbState.velocity.toString()) }
     var posSlider by remember(glbbState) { mutableStateOf(glbbState.pos) }
     var isPlaying by remember(glbbState) { mutableStateOf(false) }
